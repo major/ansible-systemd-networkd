@@ -1,7 +1,7 @@
 ---
 
-    - name: Dump
-      debug: var=hostvars[inventory_hostname]
+    # - name: Dump
+    #   debug: var=hostvars[inventory_hostname]
 
     - name: Make systemd-networkd config directory
       file:

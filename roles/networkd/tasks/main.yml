@@ -1,0 +1,44 @@
+---
+
+    - name: Dump
+      debug: var=hostvars[inventory_hostname]
+
+    - name: Make systemd-networkd config directory
+      file:
+        path: /etc/systemd/network
+        state: directory
+
+    - name: Make .network files
+      template:
+        src: dot.network.j2
+        dest: "/etc/systemd/network/{{ item }}.network"
+      when: "not '{{ item }}' == 'lo'"
+      with_items: ansible_interfaces
+
+    - name: Disable old network scripts and NetworkManager
+      service:
+        name: "{{ item }}"
+        enabled: no
+      with_items:
+        - network
+        - NetworkManager
+
+    - name: Enable systemd-networkd and systemd-resolved
+      service:
+        name: "{{ item }}"
+        enabled: yes
+      with_items:
+        - systemd-networkd
+        - systemd-resolved
+
+    - name: Start systemd-resolved so we can make a symlink
+      service:
+        name: systemd-resolved
+        state: started
+
+    - name: Make a symlink for resolv.conf to use systemd-resolved
+      file:
+        dest: /etc/resolv.conf
+        src: /run/systemd/resolve/resolv.conf
+        state: link
+        force: yes

@@ -1,0 +1,46 @@
+{% set interface = 'ansible_' ~ item %}
+{% set interface_facts = hostvars[inventory_hostname][interface] %}
+{% set interface_ip = interface_facts['ipv4']['address'] %}
+{% set default_ip = ansible_default_ipv4['address'] %}
+# {{ item }}.network
+# Created by Ansible
+[Match]
+Name={{ item }}
+
+{% if interface_ip == default_ip %}
+[Network]
+{% for dns_server in dns_servers %}
+DNS={{ dns_server }}
+{% endfor %}
+{% endif %}
+
+{% set ipv4_address = interface_facts['ipv4'] %}
+{% set ip_netmask = ipv4_address['address'] ~ '/' ~ ipv4_address['netmask'] %}
+{% set ip_cidr = ip_netmask  | ipaddr('cidr') %}
+[Address]
+Address={{ ip_cidr }}
+Gateway={{ ansible_default_ipv4['gateway'] }}
+
+{% if interface_facts['ipv4_secondaries'] is defined %}
+{% for ipv4_address in interface_facts['ipv4_secondaries'] %}
+{% set ip_netmask = ipv4_address['address'] ~ '/' ~ ipv4_address['netmask'] %}
+{% set ip_cidr = ip_netmask  | ipaddr('cidr') %}
+[Address]
+Address={{ ip_cidr }}
+{% endfor %}
+{% endif %}
+
+{% if interface_facts['ipv6'] is defined %}
+{% for ipv6_address in interface_facts['ipv6'] %}
+{% if ipv6_address['scope'] == 'global' %}
+[Address]
+Address={{ ipv6_address['address'] ~ '/' ~ ipv6_address['prefix'] }}
+{% if ipv6_address['address'] == ansible_default_ipv6['address'] %}
+Gateway={{ ansible_default_ipv6['gateway'] }}
+
+{% endif %}
+{% endif %}
+{% endfor%}
+{% endif %}
+
+# EOF

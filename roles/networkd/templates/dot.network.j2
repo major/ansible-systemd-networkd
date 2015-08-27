@@ -7,11 +7,15 @@
 [Match]
 Name={{ item }}
 
-{% if interface_ip == default_ip %}
 [Network]
+{% if interface_ip == default_ip %}
 {% for dns_server in dns_servers %}
 DNS={{ dns_server }}
 {% endfor %}
+{% endif %}
+Gateway={{ ansible_default_ipv4['gateway'] }}
+{% if ansible_default_ipv6['gateway'] is defined %}
+Gateway={{ ansible_default_ipv6['gateway'] }}
 {% endif %}
 
 {% set ipv4_address = interface_facts['ipv4'] %}
@@ -19,7 +23,6 @@ DNS={{ dns_server }}
 {% set ip_cidr = ip_netmask  | ipaddr('cidr') %}
 [Address]
 Address={{ ip_cidr }}
-Gateway={{ ansible_default_ipv4['gateway'] }}
 
 {% if interface_facts['ipv4_secondaries'] is defined %}
 {% for ipv4_address in interface_facts['ipv4_secondaries'] %}
@@ -35,10 +38,6 @@ Address={{ ip_cidr }}
 {% if ipv6_address['scope'] == 'global' %}
 [Address]
 Address={{ ipv6_address['address'] ~ '/' ~ ipv6_address['prefix'] }}
-{% if ipv6_address['address'] == ansible_default_ipv6['address'] %}
-Gateway={{ ansible_default_ipv6['gateway'] }}
-
-{% endif %}
 {% endif %}
 {% endfor%}
 {% endif %}
